@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
-# bash script that displays info about subdomains
+# second line always a comment.
 
-domain_information () {
-    line=$(dig "$2"."$1" | grep -A1 'ANSWER SECTION:' | tr '\t' '\n' | tail -2 | tr '\n' ' ')
-    echo "$2 $line" | awk '{print "The subdomain " $1 " is a " $2 " record and points to " $3}'
+domain=$1
+subdomain=${2:-"all"}
+
+function audit_subdomain {
+    sub=$1
+    query_result=$(dig $sub.$domain +short)
+    if [[ -n $query_result ]]; then
+        destination=$(echo $query_result | awk '{print toupper($1)}')
+        echo "The subdomain $sub is a A record and points to $destination"
+    fi
 }
 
-if [ "$#" == 1 ]
-then
-  domain_information "$1" "www"
-  domain_information "$1" "lb-01"
-  domain_information "$1" "web-01"
-  domain_information "$1" "web-02"
-elif [ "$#" == 2 ]
-then
-  domain_information "$1" "$2"
+if [[ $subdomain == "all" ]]; then
+    audit_subdomain "www"
+    audit_subdomain "lb-01"
+    audit_subdomain "web-01"
+    audit_subdomain "web-02"
+else
+    audit_subdomain $subdomain
 fi
